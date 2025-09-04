@@ -65,33 +65,78 @@ export default function SearchSection({
 
   // البحث في البيانات التجريبية
   const searchInSampleData = (searchWords: string[]): Result | null => {
+    const searchResults: { result: Result; score: number }[] = [];
+    
     for (const result of sampleResults) {
       const normalizedResultName = normalizeText(result.name);
+      const resultWords = normalizedResultName.split(' ').filter(word => word.length > 0);
       let score = 0;
 
-      // نقاط للكلمات المطابقة
+      // نقاط للمطابقة الكاملة للاسم (أولوية عالية جداً)
+      if (normalizedResultName === normalizeText(searchTerm)) {
+        score += 1000;
+      }
+      
+      // نقاط للمطابقة الكاملة لكل كلمة بحث (أولوية عالية)
+      let exactWordMatches = 0;
       searchWords.forEach((word) => {
-        if (normalizedResultName.includes(word)) {
-          score += 10;
+        // مطابقة كاملة للكلمة
+        if (resultWords.includes(word)) {
+          score += 100;
+          exactWordMatches++;
+        }
+        // مطابقة جزئية في بداية كلمة
+        else if (resultWords.some(resultWord => resultWord.startsWith(word))) {
+          score += 50;
+        }
+        // مطابقة جزئية في وسط الكلمة
+        else if (normalizedResultName.includes(word)) {
+          score += 20;
         }
       });
 
-      // نقاط إضافية للمطابقة الكاملة
-      if (normalizedResultName === normalizeText(searchTerm)) {
-        score += 50;
+      // مكافأة إضافية للمطابقة الكاملة لجميع كلمات البحث
+      if (exactWordMatches === searchWords.length) {
+        score += 200;
       }
 
-      // نقاط للمطابقة في بداية الاسم
-      if (normalizedResultName.startsWith(searchWords[0])) {
-        score += 20;
+      // مكافأة للمطابقة في بداية الاسم
+      if (resultWords.length > 0 && searchWords.length > 0) {
+        if (resultWords[0] === searchWords[0]) {
+          score += 80; // الاسم الأول مطابق تماماً
+        } else if (resultWords[0].startsWith(searchWords[0])) {
+          score += 40; // الاسم الأول يبدأ بكلمة البحث
+        }
+        
+        // مكافأة للاسم الثاني إذا كان موجود
+        if (resultWords.length > 1 && searchWords.length > 1) {
+          if (resultWords[1] === searchWords[1]) {
+            score += 60; // الاسم الثاني مطابق تماماً
+          } else if (resultWords[1].startsWith(searchWords[1])) {
+            score += 30; // الاسم الثاني يبدأ بكلمة البحث
+          }
+        }
       }
 
-      // إذا كان هناك مطابقة جيدة، أرجع النتيجة
-      if (score >= 10) {
-        return result;
+      // إضافة النتيجة إلى القائمة إذا كان لها نقاط
+      if (score > 0) {
+        searchResults.push({ result, score });
       }
     }
 
+    // ترتيب النتائج حسب النقاط وإرجاع الأفضل
+    if (searchResults.length > 0) {
+      searchResults.sort((a, b) => b.score - a.score);
+      
+      // طباعة النتائج للتطوير (يمكن إزالتها لاحقاً)
+      console.log('Search results with scores:', searchResults.map(r => ({
+        name: r.result.name,
+        score: r.score
+      })));
+      
+      return searchResults[0].result;
+    }
+    
     return null;
   };
 
@@ -204,34 +249,78 @@ export default function SearchSection({
         // البحث عن أفضل مطابقة
         let bestMatch = data[0];
         let bestScore = 0;
+        const matchResults: { result: any; score: number }[] = [];
 
         // حساب نقاط المطابقة لكل نتيجة
         data.forEach((result) => {
           const normalizedResultName = normalizeText(result.name);
+          const resultWords = normalizedResultName.split(' ').filter(word => word.length > 0);
           let score = 0;
 
-          // نقاط للكلمات المطابقة
+          // نقاط للمطابقة الكاملة للاسم (أولوية عالية جداً)
+          if (normalizedResultName === normalizeText(searchTerm)) {
+            score += 1000;
+          }
+          
+          // نقاط للمطابقة الكاملة لكل كلمة بحث (أولوية عالية)
+          let exactWordMatches = 0;
           searchWords.forEach((word) => {
-            if (normalizedResultName.includes(word)) {
-              score += 10;
+            // مطابقة كاملة للكلمة
+            if (resultWords.includes(word)) {
+              score += 100;
+              exactWordMatches++;
+            }
+            // مطابقة جزئية في بداية كلمة
+            else if (resultWords.some(resultWord => resultWord.startsWith(word))) {
+              score += 50;
+            }
+            // مطابقة جزئية في وسط الكلمة
+            else if (normalizedResultName.includes(word)) {
+              score += 20;
             }
           });
 
-          // نقاط إضافية للمطابقة الكاملة
-          if (normalizedResultName === normalizeText(searchTerm)) {
-            score += 50;
+          // مكافأة إضافية للمطابقة الكاملة لجميع كلمات البحث
+          if (exactWordMatches === searchWords.length) {
+            score += 200;
           }
 
-          // نقاط للمطابقة في بداية الاسم
-          if (normalizedResultName.startsWith(searchWords[0])) {
-            score += 20;
+          // مكافأة للمطابقة في بداية الاسم
+          if (resultWords.length > 0 && searchWords.length > 0) {
+            if (resultWords[0] === searchWords[0]) {
+              score += 80; // الاسم الأول مطابق تماماً
+            } else if (resultWords[0].startsWith(searchWords[0])) {
+              score += 40; // الاسم الأول يبدأ بكلمة البحث
+            }
+            
+            // مكافأة للاسم الثاني إذا كان موجود
+            if (resultWords.length > 1 && searchWords.length > 1) {
+              if (resultWords[1] === searchWords[1]) {
+                score += 60; // الاسم الثاني مطابق تماماً
+              } else if (resultWords[1].startsWith(searchWords[1])) {
+                score += 30; // الاسم الثاني يبدأ بكلمة البحث
+              }
+            }
           }
 
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = result;
+          // إضافة النتيجة إلى القائمة إذا كان لها نقاط
+          if (score > 0) {
+            matchResults.push({ result, score });
           }
         });
+
+        // ترتيب النتائج حسب النقاط واختيار الأفضل
+        if (matchResults.length > 0) {
+          matchResults.sort((a, b) => b.score - a.score);
+          
+          // طباعة النتائج للتطوير (يمكن إزالتها لاحقاً)
+          console.log('Database search results with scores:', matchResults.map(r => ({
+            name: r.result.name,
+            score: r.score
+          })));
+          
+          bestMatch = matchResults[0].result;
+        }
 
         // حساب الترتيب داخل الفئة
         const rank = await calculateRankInCategory(
